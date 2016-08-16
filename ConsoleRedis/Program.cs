@@ -19,6 +19,21 @@ namespace ConsoleRedis
             return ConnectionMultiplexer.Connect(cacheConnection);
         });
 
+        static void sub_handler(RedisChannel channel, RedisValue val)
+        {
+            if (!channel.IsNullOrEmpty)
+            {
+                Console.Write(channel.ToString());
+
+                if (val.HasValue)
+                {
+                    Console.Write(" => " + val.ToString());
+                }
+
+                Console.WriteLine();
+            }
+        }
+
         static void Main(string[] args)
         {
             var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -29,7 +44,20 @@ namespace ConsoleRedis
             Console.WriteLine("Ping was: " + task.Milliseconds + " ms");
             
             task = cache.Ping();
+            
             Console.WriteLine("Ping took: " + task.Milliseconds + " ms");
+            var pub = lazyConnection.Value.GetSubscriber();
+            var sub = lazyConnection.Value.GetSubscriber();
+            
+            sub.Subscribe("ar_dev_ch", sub_handler);
+            Thread.Sleep(1000);
+            pub.Publish("ar_dev_ch", "Hello Work");
+            while (true)
+            {
+                Thread.Sleep(10);
+            }
         }
+
+       
     }
 }
